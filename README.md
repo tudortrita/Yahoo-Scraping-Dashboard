@@ -14,3 +14,8 @@ Files:
 
 Folders:
 - data | Contains both historical and financial fundamentals data as .csv files
+
+### Moving average for AAPL
+![Moving Average] (ma_dashboard.png)
+### Bollinger bands for MSFT
+![Bollinger Bands] (ba_dashboard.png)

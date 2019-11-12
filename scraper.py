@@ -1,10 +1,8 @@
-""" Program to scrape stocks from Yahoo Finance (Updated as of 2019/11/11)
+""" Program to scrape stocks from Yahoo Finance (Works as of 12/11/2019)
 using selenium.
 @author: Tudor Trita
-@date: 11/11/2019
+@date: 12/11/2019
 """
-
-
 from selenium import webdriver
 from datetime import datetime
 from urllib.parse import urlparse
@@ -12,6 +10,7 @@ from urllib.parse import parse_qs
 import time
 import os
 import pandas as pd
+
 
 class ScraperChrome():
     def __init__(self, timeout):
@@ -28,7 +27,9 @@ class ScraperChrome():
         self.browser = webdriver.Chrome(options=options)
         self.cookie = None
         try:
+            print("Getting browser consent:")
             self.get_browser_consent()
+            print("OK")
         except:
             "Browser consent could not be done at this time."
 
@@ -56,6 +57,7 @@ class ScraperChrome():
                 self.get_historical_cookie()
             else:
                 break
+        assert self.cookie, "Cookie not acquired"
         print("Got cookie, proceeding to download")
         file_name = f"{self.symbol}.csv"
         period_end = 2000000000
@@ -66,7 +68,6 @@ class ScraperChrome():
 
     def get_historical_cookie(self):
         cookie_url = f"https://finance.yahoo.com/quote/{self.symbol}/history?period1=0&period2=2000000000&interval=1d&filter=history&frequency=1d"
-        time.sleep(self.timeout)
         self.browser.get(cookie_url)
         time.sleep(self.timeout)
         el = self.browser.find_element_by_xpath("// a[. // span[text() = 'Download Data']]")
@@ -75,7 +76,7 @@ class ScraperChrome():
         self.cookie = parse_qs(a.query)["crumb"][0]
 
     def grab_financials(self):
-        df = pd.DataFrame(columns=['Total Revenue', 'Net Income', 'EBITDA'])
+        df = pd.DataFrame(columns=['Total Revenue', 'Gross Profit', 'Total Operating Expenses', 'Net Income', 'EBITDA'])
         url_financials = f"https://finance.yahoo.com/quote/{self.symbol}/financials?p={self.symbol}"
         self.browser.get(url_financials)
         time.sleep(self.timeout)
@@ -91,15 +92,19 @@ class ScraperChrome():
 
         # Loading data
         total_revenue = self.browser.find_element_by_xpath(r"""//*[@id="Col1-1-Financials-Proxy"]/section/div[4]/div[1]/div[1]/div[2]/div[1]/div[1]""").text.split(" ")[1:]
+        gross_profit = self.browser.find_element_by_xpath(r"""//*[@id="Col1-1-Financials-Proxy"]/section/div[4]/div[1]/div[1]/div[2]/div[3]/div[1]""").text.split(" ")[1:]
+        total_operating_expenses = self.browser.find_element_by_xpath(r"""//*[@id="Col1-1-Financials-Proxy"]/section/div[4]/div[1]/div[1]/div[2]/div[4]/div[2]/div[3]/div[1]""").text.split(" ")[2:]
         net_income = self.browser.find_element_by_xpath("""//*[@id="Col1-1-Financials-Proxy"]/section/div[4]/div[1]/div[1]/div[2]/div[11]/div[1]""").text.split(" ")[1:]
         EBITDA = self.browser.find_element_by_xpath("""//*[@id="Col1-1-Financials-Proxy"]/section/div[4]/div[1]/div[1]/div[2]/div[15]/div[1]""").text.split(" ")
 
         total_revenue[0] = total_revenue[0].split("\n")[-1]
+        gross_profit[0] = gross_profit[0].split("\n")[-1]
+        total_operating_expenses[0] = total_operating_expenses[0].split("\n")[-1]
         net_income[0] = net_income[0].split("\n")[-1]
         EBITDA[0] = EBITDA[0].split("\n")[-1]
 
         for i, d in enumerate(dates):
-            df.loc[d] = [total_revenue[i], net_income[i], EBITDA[i]]
+            df.loc[d] = [total_revenue[i], gross_profit[i], total_operating_expenses[i], net_income[i], EBITDA[i]]
 
         df.to_csv(os.path.join(self.data_path, f"{self.symbol}_financials.csv"))
         print("Finished scraping financials")

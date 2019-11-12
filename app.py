@@ -3,19 +3,13 @@ import dash
 import dash_table
 import dash_html_components as html
 import dash_core_components as dcc
-
+from dash.dependencies import Input, Output
 from dash.dependencies import Input, Output, State
-
-import webbrowser
+import plotly.graph_objs as go
 
 import pandas as pd
 
 from download_stocks import symbol_dict
-
-from dash.dependencies import Input, Output
-
-import plotly.graph_objs as go
-
 
 ###############################################################################
 
@@ -115,15 +109,17 @@ def update_figure_1(symbol):
                                'layout': layout})
     return OUTPUT
 
-# ###############################################################################
-# # Update Tab 2
-# ###############################################################################
+###############################################################################
+# Update Tab 2
+###############################################################################
 
 @app.callback(Output('content-tab-2', 'children'),
               [Input('dropdown-2', 'value')])
 def update_figure_2(symbol):
     df = pd.read_csv(f"data/{symbol}_financials.csv")
-    df.rename(columns={df.columns[0]: "Date"},
+    df.rename(columns={df.columns[0]: "Date"}, inplace=True)
+    df = df.set_index('Date').T.reset_index()
+    df.rename(columns={df.columns[0]: "Fundamental|Date"},
               inplace=True)
 
     OUTPUT = dash_table.DataTable(id='financial-table',
@@ -132,7 +128,6 @@ def update_figure_2(symbol):
                                   style_cell={'width'    : '300px',
                 				              'height'   : '60px',
                 				              'textAlign': 'left'})
-
     return OUTPUT
 
 if __name__ == '__main__':

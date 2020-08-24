@@ -1,5 +1,7 @@
 # Yahoo Web Scraping - Dashboard
 
+This repository contains a dashboard for displaying stock data written in Python with the Dash package. Common stock data such as open and close prices as well as simple technical indicators (moving averages, bollinger bands) are implemented.
+
 Requirements:
 - dash
 - plotly
